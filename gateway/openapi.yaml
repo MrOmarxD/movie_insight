@@ -4,6 +4,12 @@ info:
   version: 1.0.0
 servers:
   - url: http://localhost:8080
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 paths:
   /api/movies:
     get:
@@ -17,17 +23,39 @@ paths:
       responses:
         '200':
           description: Película encontrada
-  /api/users:
+  /api/auth/register:
     post:
-      summary: Crear usuario
+      summary: Registrar usuario
       requestBody:
         required: true
       responses:
         '200':
           description: Usuario creado
-  /api/users/{id}/favorites:
+  /api/auth/login:
     post:
-      summary: Añadir favorito
+      summary: Login usuario
+      requestBody:
+        required: true
+      responses:
+        '200':
+          description: Devuelve token JWT
+  /api/users/{id}/favorites:
+    get:
+      summary: Obtener favoritos (autenticación requerida)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista de favoritos
+    post:
+      summary: Añadir favorito (autenticación requerida)
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
