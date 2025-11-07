@@ -1,0 +1,35 @@
+openapi: 3.0.0
+info:
+  title: Movie Insight API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/movies:
+    get:
+      summary: Busca película por título
+      parameters:
+        - in: query
+          name: title
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Película encontrada
+  /api/users:
+    post:
+      summary: Crear usuario
+      requestBody:
+        required: true
+      responses:
+        '200':
+          description: Usuario creado
+  /api/users/{id}/favorites:
+    post:
+      summary: Añadir favorito
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }

@@ -1,0 +1,48 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  python-service:
+    build: ./python-service
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/movieinsight
+      - OMDB_API_KEY=${OMDB_API_KEY}
+    depends_on:
+      - mongo
+    ports:
+      - "5001:5001"
+
+  node-service:
+    build: ./node-service
+    command: node index.js
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/movieinsight
+    depends_on:
+      - mongo
+    ports:
+      - "5002:5002"
+
+  gateway:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./gateway:/app
+      - ./gateway/public:/app/public
+    command: node index.js
+    environment:
+      - PY_SERVICE=http://python-service:5001
+      - USER_SERVICE=http://node-service:5002
+    depends_on:
+      - python-service
+      - node-service
+    ports:
+      - "8080:8080"
+
+volumes:
+  mongo_data:
