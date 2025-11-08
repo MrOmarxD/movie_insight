@@ -67,7 +67,7 @@ const requireAuth = async (req, res, next) => {
   }
 };
 
-// Create user (non-auth, admin could create users via other flow)
+// Create user (non-auth)
 app.post('/users', async (req, res) => {
   const { username, email, password } = req.body;
   if(!username||!email||!password) return res.status(400).json({error: "username, email and password required"});
@@ -86,7 +86,7 @@ app.get('/users/:id', requireAuth, async (req, res) => {
   res.json(u);
 });
 
-// Get favorites (protected, owner or admin)
+// Get favorites (protected)
 app.get('/users/:id/favorites', requireAuth, async (req, res) => {
   const requester = req.user;
   if(requester.sub !== req.params.id && requester.role !== 'admin') return res.status(403).json({error: "forbidden"});
@@ -95,7 +95,7 @@ app.get('/users/:id/favorites', requireAuth, async (req, res) => {
   res.json({ favorites: u.favorites });
 });
 
-// Add favorite by imdbID (protected)
+// Add favorite
 app.post('/users/:id/favorites', requireAuth, async (req, res) => {
   const { imdbid } = req.body;
   if(!imdbid) return res.status(400).json({error: "imdbid required"});

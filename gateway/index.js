@@ -17,23 +17,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "changemeinprod";
 // Serve static frontend
 app.use('/', express.static(path.join(__dirname, 'public')));
 
-// Middleware: verify JWT if present, attach payload to req.user
-function verifyTokenOptional(req, res, next) {
-  const auth = req.headers.authorization;
-  if(!auth) return next();
-  if(!auth.startsWith('Bearer ')) return res.status(400).json({error: "malformed auth header"});
-  const token = auth.slice(7);
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
-  } catch(e) {
-    // invalid token -> reject
-    return res.status(401).json({error: "invalid token"});
-  }
-  next();
-}
-
-// Middleware: require auth
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization;
   if(!auth || !auth.startsWith('Bearer ')) return res.status(401).json({error: "missing token"});
@@ -57,16 +40,6 @@ app.get('/api/movies', async (req, res) => {
   res.status(r.status).json(data);
 });
 
-// Get movie details by title (public) - reuse /movies?t=...
-app.get('/api/movies/details', async (req, res) => {
-  const q = req.query;
-  const url = new URL(`${PY_SERVICE}/movies`);
-  Object.keys(q).forEach(k => url.searchParams.append(k, q[k]));
-  const r = await fetch(url);
-  const data = await r.json();
-  res.status(r.status).json(data);
-});
-
 // Auth routes passthrough (register/login) - public
 app.post('/api/auth/register', async (req, res) => {
   const r = await fetch(`${USER_SERVICE}/auth/register`, { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify(req.body) });
@@ -81,7 +54,6 @@ app.post('/api/auth/login', async (req, res) => {
 
 // Protected user routes - requireAuth middleware; proxy to user service including token
 app.use('/api/users', requireAuth, async (req, res) => {
-  // Forward the original request to USER_SERVICE, include Authorization header
   const target = `${USER_SERVICE}${req.originalUrl.replace(/^\/api\/users/,'')}`;
   const opts = { method: req.method, headers: { 'content-type': 'application/json', 'authorization': req.headers.authorization } };
   if (['POST','PUT','PATCH'].includes(req.method)) opts.body = JSON.stringify(req.body);
@@ -90,7 +62,6 @@ app.use('/api/users', requireAuth, async (req, res) => {
   res.status(r.status).json(data);
 });
 
-// Swagger UI for OpenAPI
 const swaggerDocument = YAML.load(path.join(__dirname, 'openapi.yaml'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

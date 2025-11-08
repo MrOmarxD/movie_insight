@@ -4,19 +4,64 @@
   <meta charset="utf-8"/>
   <title>Movie Insight</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <style>
-    body{font-family:Arial,Helvetica,sans-serif;max-width:900px;margin:20px auto;padding:10px;}
-    .movie{display:flex;gap:10px;margin-bottom:12px;}
-    img{width:80px}
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>Movie Insight</h1>
-  <div>
-    <input id="q" placeholder="Buscar título..." />
-    <button id="btn">Buscar</button>
+<body class="bg-gray-100">
+  <nav class="bg-white shadow">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-semibold">Movie Insight</h1>
+      <div>
+        <button id="open-auth" class="bg-indigo-600 text-white px-3 py-1 rounded">Iniciar sesión / Registrarse</button>
+        <button id="logout-btn" class="hidden bg-red-500 text-white px-3 py-1 rounded">Cerrar sesión</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto p-6">
+    <section class="mb-6">
+      <div class="flex gap-2">
+        <input id="q" class="flex-1 border rounded px-3 py-2" placeholder="Buscar título de película..."/>
+        <button id="search-btn" class="bg-indigo-600 text-white px-4 rounded">Buscar</button>
+      </div>
+    </section>
+
+    <section id="results"></section>
+  </main>
+
+  <!-- Modal -->
+  <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+    <div class="bg-white rounded-lg w-full max-w-md p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 id="modal-title" class="text-lg font-semibold">Iniciar sesión</h2>
+        <button id="close-auth" class="text-gray-500">&times;</button>
+      </div>
+
+      <div id="forms">
+        <!-- Login form -->
+        <div id="login-form">
+          <input id="login-username" class="w-full border rounded p-2 mb-2" placeholder="Usuario"/>
+          <input id="login-password" type="password" class="w-full border rounded p-2 mb-4" placeholder="Contraseña"/>
+          <div class="flex justify-between items-center">
+            <button id="do-login" class="bg-indigo-600 text-white px-4 py-2 rounded">Entrar</button>
+            <a href="#" id="show-register" class="text-sm text-indigo-600">Crear cuenta</a>
+          </div>
+        </div>
+
+        <!-- Register form -->
+        <div id="register-form" class="hidden">
+          <input id="reg-username" class="w-full border rounded p-2 mb-2" placeholder="Usuario"/>
+          <input id="reg-email" class="w-full border rounded p-2 mb-2" placeholder="Email"/>
+          <input id="reg-password" type="password" class="w-full border rounded p-2 mb-4" placeholder="Contraseña"/>
+          <div class="flex justify-between items-center">
+            <button id="do-register" class="bg-green-600 text-white px-4 py-2 rounded">Registrar</button>
+            <a href="#" id="show-login" class="text-sm text-indigo-600">Tengo cuenta</a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div id="results"></div>
-  <script src="app.js"></script>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>
