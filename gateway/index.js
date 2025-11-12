@@ -14,7 +14,6 @@ const PY_SERVICE = process.env.PY_SERVICE || "http://localhost:5001";
 const USER_SERVICE = process.env.USER_SERVICE || "http://localhost:5002";
 const JWT_SECRET = process.env.JWT_SECRET || "changemeinprod";
 
-// Serve static frontend
 app.use('/', express.static(path.join(__dirname, 'public')));
 
 function requireAuth(req, res, next) {
@@ -30,7 +29,7 @@ function requireAuth(req, res, next) {
   }
 }
 
-// Proxy search movies (public)
+// Public movie search proxy
 app.get('/api/movies', async (req, res) => {
   const q = req.query;
   const url = new URL(`${PY_SERVICE}/movies`);
@@ -40,7 +39,7 @@ app.get('/api/movies', async (req, res) => {
   res.status(r.status).json(data);
 });
 
-// Auth routes passthrough (register/login) - public
+// Auth passthrough
 app.post('/api/auth/register', async (req, res) => {
   const r = await fetch(`${USER_SERVICE}/auth/register`, { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify(req.body) });
   const data = await r.json();
@@ -52,7 +51,7 @@ app.post('/api/auth/login', async (req, res) => {
   res.status(r.status).json(data);
 });
 
-// Protected user routes - requireAuth middleware; proxy to user service including token
+// Protected user routes (forward token)
 app.use('/api/users', requireAuth, async (req, res) => {
   const target = `${USER_SERVICE}${req.originalUrl.replace(/^\/api\/users/,'')}`;
   const opts = { method: req.method, headers: { 'content-type': 'application/json', 'authorization': req.headers.authorization } };
