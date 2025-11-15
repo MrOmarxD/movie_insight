@@ -6,6 +6,8 @@ services:
       - mongo_data:/data/db
     ports:
       - "27017:27017"
+    networks:
+      - appnet
 
   movie-service:
     build: ./movie-service
@@ -17,6 +19,8 @@ services:
       - mongo
     ports:
       - "5001:5001"
+    networks:
+      - appnet
 
   user-service:
     build: ./user-service
@@ -28,6 +32,8 @@ services:
       - mongo
     ports:
       - "5002:5002"
+    networks:
+      - appnet
 
   gateway:
     build: ./gateway
@@ -41,6 +47,12 @@ services:
       - user-service
     ports:
       - "8080:8080"
+    networks:
+      - appnet
 
 volumes:
   mongo_data:
+
+networks:
+  appnet:
+    driver: bridge
