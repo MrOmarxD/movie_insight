@@ -38,17 +38,27 @@ async function register() {
 }
 
 async function login() {
-  const username = document.getElementById('login-username').value.trim();
+  const identifier = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
-  if(!username||!password){ alert('Rellena todos los campos'); return; }
-  const res = await fetch(API_URL+'/auth/login', {
-    method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({username,password})
+
+  if (!identifier || !password) {
+    alert('Rellena todos los campos');
+    return;
+  }
+
+  const res = await fetch(API_URL + '/auth/login', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ identifier, password })
   });
+
   const data = await res.json();
-  if(res.ok && data.token){
+
+  if (res.ok && data.token) {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
-    modal.classList.add('hidden'); modal.classList.remove('flex');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
     updateModalState();
   } else {
     alert(data.error || 'Credenciales incorrectas');

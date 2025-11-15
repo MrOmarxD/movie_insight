@@ -51,23 +51,26 @@ app.post('/auth/register', async (req, res) => {
 // LOGIN
 app.post('/auth/login', async (req, res) => {
   try {
-    const { email, username, password } = req.body;
+    const { identifier, password } = req.body;
 
-    if (!password || (!email && !username)) {
-      return res.status(400).json({ error: "email or username and password required" });
+    if (!identifier || !password) {
+      return res.status(400).json({ error: "email/username and password required" });
     }
 
-    // Buscar por email si se envía email, sino por username
-    const query = email ? { email } : { username };
-    const u = await User.findOne(query);
+    // Buscar por email o username
+    const u = await User.findOne({
+      $or: [
+        { email: identifier },
+        { username: identifier }
+      ]
+    });
 
     if (!u) return res.status(401).json({ error: "invalid credentials" });
 
-    // Comparar password
     const ok = await bcrypt.compare(password, u.passwordHash);
     if (!ok) return res.status(401).json({ error: "invalid credentials" });
 
-    // Crear token
+    // Token JWT
     const token = jwt.sign(
       { sub: u._id.toString(), username: u.username, role: u.role },
       JWT_SECRET,
