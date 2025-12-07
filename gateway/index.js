@@ -1,5 +1,5 @@
 const express = require('express');
-const fetch = (...args) => import('node-fetch').then(({default: f})=> f(...args));
+const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 const path = require('path');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
@@ -10,58 +10,113 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PY_SERVICE = process.env.PY_SERVICE || "http://localhost:5001";
-const USER_SERVICE = process.env.USER_SERVICE || "http://localhost:5002";
-const JWT_SECRET = process.env.JWT_SECRET || "changemeinprod";
+const PY_SERVICE = process.env.PY_SERVICE || "http://movie-service:5001";
+const USER_SERVICE = process.env.USER_SERVICE || "http://user-service:5002";
+const JWT_SECRET = process.env.JWT_SECRET || "changeme";
 
 app.use('/', express.static(path.join(__dirname, 'public')));
 
+// AUTH MIDDLEWARE
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization;
-  if(!auth || !auth.startsWith('Bearer ')) return res.status(401).json({error: "missing token"});
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: "missing token" });
+  }
+
   const token = auth.slice(7);
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
-  } catch(e) {
-    return res.status(401).json({error: "invalid token"});
+  } catch {
+    return res.status(401).json({ error: "invalid token" });
   }
 }
 
-// Public movie search proxy
+// MOVIE SERVICE PROXY
 app.get('/api/movies', async (req, res) => {
-  const q = req.query;
-  const url = new URL(`${PY_SERVICE}/movies`);
-  Object.keys(q).forEach(k => url.searchParams.append(k, q[k]));
-  const r = await fetch(url);
-  const data = await r.json();
-  res.status(r.status).json(data);
+  try {
+    const url = new URL(`${PY_SERVICE}/movies`);
+    Object.keys(req.query).forEach(k => url.searchParams.append(k, req.query[k]));
+
+    const r = await fetch(url);
+    const data = await r.json();
+
+    res.status(r.status).json(data);
+  } catch (err) {
+    console.error("❌ movie-service error:", err.message);
+    res.status(502).json({ error: "movie-service unavailable" });
+  }
 });
 
-// Auth passthrough
+// AUTH PASSTHROUGH
 app.post('/api/auth/register', async (req, res) => {
-  const r = await fetch(`${USER_SERVICE}/auth/register`, { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify(req.body) });
-  const data = await r.json();
-  res.status(r.status).json(data);
+  try {
+    const r = await fetch(`${USER_SERVICE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+
+    const data = await r.json();
+    res.status(r.status).json(data);
+  } catch (e) {
+    console.error("❌ register error:", e.message);
+    res.status(502).json({ error: "user-service unavailable" });
+  }
 });
+
 app.post('/api/auth/login', async (req, res) => {
-  const r = await fetch(`${USER_SERVICE}/auth/login`, { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify(req.body) });
-  const data = await r.json();
-  res.status(r.status).json(data);
+  try {
+    const r = await fetch(`${USER_SERVICE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+
+    const data = await r.json();
+    res.status(r.status).json(data);
+  } catch (e) {
+    console.error("❌ login error:", e.message);
+    res.status(502).json({ error: "user-service unavailable" });
+  }
 });
 
-// Protected user routes (forward token)
-app.use('/api/users', requireAuth, async (req, res) => {
-  const target = `${USER_SERVICE}${req.originalUrl.replace(/^\/api\/users/,'')}`;
-  const opts = { method: req.method, headers: { 'content-type': 'application/json', 'authorization': req.headers.authorization } };
-  if (['POST','PUT','PATCH'].includes(req.method)) opts.body = JSON.stringify(req.body);
-  const r = await fetch(target, opts);
-  const data = await r.json();
-  res.status(r.status).json(data);
+// FAVORITES PROXY
+app.post('/api/users/:id/favorites', requireAuth, async (req, res) => {
+  try {
+    const target = `${USER_SERVICE}/users/${req.params.id}/favorites`;
+
+    console.log("➡️ Gateway → User:", target);
+
+    const r = await fetch(target, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: req.headers.authorization
+      },
+      body: JSON.stringify(req.body)
+    });
+
+    const text = await r.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("❌ Invalid JSON from user-service:", text);
+      return res.status(502).json({ error: "Invalid response from user-service" });
+    }
+
+    res.status(r.status).json(data);
+
+  } catch (e) {
+    console.error('❌ USER SERVICE ERROR:', e.message);
+    res.status(502).json({ error: 'User service unavailable' });
+  }
 });
 
+// SWAGGER
 const swaggerDocument = YAML.load(path.join(__dirname, 'openapi.yaml'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.listen(8080, () => console.log("Gateway listening on 8080"));
+app.listen(8080, () => console.log("✅ Gateway listening on 8080"));

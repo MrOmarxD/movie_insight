@@ -1,48 +1,49 @@
 from flask import Flask, request, jsonify
-import os, requests
 from pymongo import MongoClient
-from flask_cors import CORS
-from dotenv import load_dotenv
-load_dotenv()
+import requests
+import os
 
 app = Flask(__name__)
-CORS(app)
 
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/movieinsight")
-OMDB_API_KEY = os.environ.get("OMDB_API_KEY", "demo")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo:27017/movieinsight")
+OMDB_API_KEY = os.getenv("OMDB_API_KEY")
+
 client = MongoClient(MONGO_URI)
-db = client.get_default_database()
-movies_col = db.movies
+db = client["movieinsight"]
+favorites_collection = db["favorites"]
 
+# BUSCAR PELÍCULA POR TÍTULO O ID
 @app.route("/movies", methods=["GET"])
-def search_movie():
+def get_movie():
     title = request.args.get("title")
-    if not title:
-        return jsonify({"error": "title query param required"}), 400
+    imdbid = request.args.get("imdbid")
 
-    cached = movies_col.find_one({"Title_lower": title.lower()})
-    if cached:
-        cached.pop("_id", None)
-        cached["cached"] = True
-        return jsonify(cached)
+    if not title and not imdbid:
+        return jsonify({"error": "title or imdbid required"}), 400
 
-    params = {"t": title, "apikey": OMDB_API_KEY}
-    resp = requests.get("http://www.omdbapi.com/", params=params, timeout=10)
-    if resp.status_code != 200:
-        return jsonify({"error": "OMDb error"}), 502
-    data = resp.json()
-    if data.get("Response") == "False":
-        return jsonify({"error": data.get("Error", "not found")}), 404
+    params = {"apikey": OMDB_API_KEY}
+    if title:
+        params["t"] = title
+    if imdbid:
+        params["i"] = imdbid
 
-    doc = data.copy()
-    doc["Title_lower"] = data.get("Title","").lower()
-    try:
-        movies_col.insert_one(doc)
-    except Exception:
-        pass
-    doc.pop("_id", None)
-    doc["cached"] = False
-    return jsonify(doc)
+    r = requests.get("http://www.omdbapi.com/", params=params)
+    data = r.json()
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    if "Error" in data:
+        return jsonify({"error": data["Error"]}), 404
+
+    if "_id" in data:
+        data["_id"] = str(data["_id"])
+
+    return jsonify(data)
+
+
+# HEALTHCHECK
+@app.route("/health")
+def health():
+    return {"status": "ok"}
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5001)
