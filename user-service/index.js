@@ -17,6 +17,7 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ Mongo connected"))
   .catch(err => console.error("❌ Mongo error:", err));
 
+
 // REGISTER
 app.post('/auth/register', async (req, res) => {
   const { username, email, password } = req.body;
@@ -29,13 +30,19 @@ app.post('/auth/register', async (req, res) => {
   if (exists) return res.status(409).json({ error: "User already exists" });
 
   const hash = await bcrypt.hash(password, 10);
-  const user = new User({ username, email, passwordHash: hash, favorites: [] });
+  const user = new User({
+    username,
+    email,
+    passwordHash: hash,
+    favorites: []
+  });
 
   await user.save();
   res.json({ message: "Registered" });
 });
 
-// LOGIN
+
+// LOGIN (EMAIL O USERNAME)
 app.post('/auth/login', async (req, res) => {
   const { identifier, password } = req.body;
 
@@ -48,13 +55,18 @@ app.post('/auth/login', async (req, res) => {
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) return res.status(401).json({ error: "Invalid credentials" });
 
-  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "2h" });
+  const token = jwt.sign(
+    { sub: user._id.toString(), role: "user" },
+    JWT_SECRET,
+    { expiresIn: "2h" }
+  );
 
   res.json({
     token,
     user: { id: user._id, username: user.username, email: user.email }
   });
 });
+
 
 // AUTH MIDDLEWARE
 function requireAuth(req, res, next) {
@@ -72,9 +84,16 @@ function requireAuth(req, res, next) {
   }
 }
 
-// ADD FAVORITE
+
+// ADD FAVORITE (ARREGLADO)
 app.post('/users/:id/favorites', requireAuth, async (req, res) => {
   const { imdbid } = req.body;
+
+  if (!imdbid) return res.status(400).json({ error: "imdbid required" });
+
+  if (req.user.sub !== req.params.id && req.user.role !== 'admin') {
+    return res.status(403).json({ error: "forbidden" });
+  }
 
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ error: "User not found" });
@@ -87,17 +106,28 @@ app.post('/users/:id/favorites', requireAuth, async (req, res) => {
   res.json({ favorites: user.favorites });
 });
 
+
 // GET FAVORITES
 app.get('/users/:id/favorites', requireAuth, async (req, res) => {
+  if (req.user.sub !== req.params.id && req.user.role !== 'admin') {
+    return res.status(403).json({ error: "forbidden" });
+  }
+
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
   res.json({ favorites: user.favorites });
 });
 
-// DELETE FAVORITES
+
+// DELETE FAVORITE
 app.delete('/users/:id/favorites', requireAuth, async (req, res) => {
   const imdbid = req.query.imdbid;
+
+  if (req.user.sub !== req.params.id && req.user.role !== 'admin') {
+    return res.status(403).json({ error: "forbidden" });
+  }
+
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ error: "User not found" });
 

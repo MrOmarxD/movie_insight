@@ -23,9 +23,8 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ error: "missing token" });
   }
 
-  const token = auth.slice(7);
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    req.user = jwt.verify(auth.slice(7), JWT_SECRET);
     next();
   } catch {
     return res.status(401).json({ error: "invalid token" });
@@ -40,7 +39,6 @@ app.get('/api/movies', async (req, res) => {
 
     const r = await fetch(url);
     const data = await r.json();
-
     res.status(r.status).json(data);
   } catch (err) {
     console.error("❌ movie-service error:", err.message);
@@ -81,11 +79,10 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// FAVORITES PROXY
+// AÑADIR FAVORITO (POST)
 app.post('/api/users/:id/favorites', requireAuth, async (req, res) => {
   try {
     const target = `${USER_SERVICE}/users/${req.params.id}/favorites`;
-
     console.log("➡️ Gateway → User:", target);
 
     const r = await fetch(target, {
@@ -97,20 +94,49 @@ app.post('/api/users/:id/favorites', requireAuth, async (req, res) => {
       body: JSON.stringify(req.body)
     });
 
-    const text = await r.text();
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch {
-      console.error("❌ Invalid JSON from user-service:", text);
-      return res.status(502).json({ error: "Invalid response from user-service" });
-    }
-
+    const data = await r.json();
     res.status(r.status).json(data);
-
   } catch (e) {
     console.error('❌ USER SERVICE ERROR:', e.message);
+    res.status(502).json({ error: 'User service unavailable' });
+  }
+});
+
+// OBTENER FAVORITOS (GET)
+app.get('/api/users/:id/favorites', requireAuth, async (req, res) => {
+  try {
+    const target = `${USER_SERVICE}/users/${req.params.id}/favorites`;
+    console.log("➡️ Gateway → User (GET):", target);
+
+    const r = await fetch(target, {
+      headers: { Authorization: req.headers.authorization }
+    });
+
+    const data = await r.json();
+    res.status(r.status).json(data);
+  } catch (e) {
+    console.error('❌ FAVORITES GET ERROR:', e.message);
+    res.status(502).json({ error: 'User service unavailable' });
+  }
+});
+
+// ELIMINAR FAVORITO (DELETE)
+app.delete('/api/users/:id/favorites/:imdbid', requireAuth, async (req, res) => {
+  try {
+    const target = `${USER_SERVICE}/users/${req.params.id}/favorites/${req.params.imdbid}`;
+    console.log("🗑️ Gateway → User:", target);
+
+    const r = await fetch(target, {
+      method: 'DELETE',
+      headers: {
+        Authorization: req.headers.authorization
+      }
+    });
+
+    const data = await r.json();
+    res.status(r.status).json(data);
+  } catch (e) {
+    console.error('❌ DELETE FAVORITE ERROR:', e.message);
     res.status(502).json({ error: 'User service unavailable' });
   }
 });

@@ -7,6 +7,7 @@ function authHeaders() {
   return token ? { "Authorization": "Bearer " + token } : {};
 }
 
+// BÚSQUEDA DE PELIS
 searchBtn.addEventListener('click', async () => {
   const title = q.value.trim();
   if (!title) return alert('⚠️ Escribe un título');
@@ -32,6 +33,7 @@ searchBtn.addEventListener('click', async () => {
   }
 });
 
+// RENDER DE PELÍCULA
 function renderMovie(movie) {
   const poster = movie.Poster && movie.Poster !== 'N/A'
     ? `<img src="${movie.Poster}" class="w-32 rounded-2xl shadow-lg mr-6">`
@@ -54,14 +56,16 @@ function renderMovie(movie) {
   `;
 }
 
-// FAVORITES FUNCTION
+// GUARDAR FAVORITOS
 async function addFavorite(imdbid) {
-  const user = JSON.parse(localStorage.getItem('user') || "null");
   const token = localStorage.getItem('token');
-  if (!token || !user) return alert("⚠ Debes iniciar sesión");
+  if (!token) return alert("⚠ Debes iniciar sesión");
+
+  const payload = JSON.parse(atob(token.split(".")[1]));
+  const realUserId = payload.sub;
 
   try {
-    const res = await fetch(`/api/users/${user.id}/favorites`, {
+    const res = await fetch(`/api/users/${realUserId}/favorites`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
