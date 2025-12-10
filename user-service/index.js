@@ -17,11 +17,9 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ Mongo connected"))
   .catch(err => console.error("❌ Mongo error:", err));
 
-
 // REGISTER
 app.post('/auth/register', async (req, res) => {
   const { username, email, password } = req.body;
-
   if (!username || !email || !password) {
     return res.status(400).json({ error: "Missing fields" });
   }
@@ -30,19 +28,13 @@ app.post('/auth/register', async (req, res) => {
   if (exists) return res.status(409).json({ error: "User already exists" });
 
   const hash = await bcrypt.hash(password, 10);
-  const user = new User({
-    username,
-    email,
-    passwordHash: hash,
-    favorites: []
-  });
-
+  const user = new User({ username, email, passwordHash: hash, favorites: [] });
   await user.save();
+
   res.json({ message: "Registered" });
 });
 
-
-// LOGIN (EMAIL O USERNAME)
+// LOGIN
 app.post('/auth/login', async (req, res) => {
   const { identifier, password } = req.body;
 
@@ -61,14 +53,10 @@ app.post('/auth/login', async (req, res) => {
     { expiresIn: "2h" }
   );
 
-  res.json({
-    token,
-    user: { id: user._id, username: user.username, email: user.email }
-  });
+  res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
 });
 
-
-// AUTH MIDDLEWARE
+// AUTH
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith("Bearer ")) {
@@ -76,66 +64,58 @@ function requireAuth(req, res, next) {
   }
 
   try {
-    const token = auth.slice(7);
-    req.user = jwt.verify(token, JWT_SECRET);
+    req.user = jwt.verify(auth.slice(7), JWT_SECRET);
     next();
   } catch {
     res.status(401).json({ error: "Invalid token" });
   }
 }
 
-
-// ADD FAVORITE (ARREGLADO)
+// ADD FAVORITE
 app.post('/users/:id/favorites', requireAuth, async (req, res) => {
   const { imdbid } = req.body;
 
   if (!imdbid) return res.status(400).json({ error: "imdbid required" });
 
-  if (req.user.sub !== req.params.id && req.user.role !== 'admin') {
+  if (req.user.sub !== req.params.id)
     return res.status(403).json({ error: "forbidden" });
-  }
 
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  if (!user.favorites.includes(imdbid)) {
-    user.favorites.push(imdbid);
-    await user.save();
+  if (user.favorites.includes(imdbid)) {
+    return res.status(409).json({ error: "Esta película ya está en favoritos" });
   }
 
-  res.json({ favorites: user.favorites });
-});
-
-
-// GET FAVORITES
-app.get('/users/:id/favorites', requireAuth, async (req, res) => {
-  if (req.user.sub !== req.params.id && req.user.role !== 'admin') {
-    return res.status(403).json({ error: "forbidden" });
-  }
-
-  const user = await User.findById(req.params.id);
-  if (!user) return res.status(404).json({ error: "User not found" });
-
-  res.json({ favorites: user.favorites });
-});
-
-
-// DELETE FAVORITE
-app.delete('/users/:id/favorites', requireAuth, async (req, res) => {
-  const imdbid = req.query.imdbid;
-
-  if (req.user.sub !== req.params.id && req.user.role !== 'admin') {
-    return res.status(403).json({ error: "forbidden" });
-  }
-
-  const user = await User.findById(req.params.id);
-  if (!user) return res.status(404).json({ error: "User not found" });
-
-  user.favorites = user.favorites.filter(id => id !== imdbid);
+  user.favorites.push(imdbid);
   await user.save();
 
   res.json({ favorites: user.favorites });
 });
 
+// GET FAVORITES
+app.get('/users/:id/favorites', requireAuth, async (req, res) => {
+  if (req.user.sub !== req.params.id)
+    return res.status(403).json({ error: "forbidden" });
+
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  res.json({ favorites: user.favorites });
+});
+
+// DELETE FAVORITE
+app.delete('/users/:id/favorites/:imdbid', requireAuth, async (req, res) => {
+  if (req.user.sub !== req.params.id)
+    return res.status(403).json({ error: "forbidden" });
+
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  user.favorites = user.favorites.filter(id => id !== req.params.imdbid);
+  await user.save();
+
+  res.json({ favorites: user.favorites });
+});
 
 app.listen(5002, () => console.log("✅ user-service listening on 5002"));
