@@ -1,1 +1,9 @@
 .env
+node_modules
+npm-debug.log*
+pnpm-lock.yaml
+yarn.lock
+__pycache__/
+.pytest_cache/
+.DS_Store
+*.pyc

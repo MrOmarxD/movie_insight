@@ -4,101 +4,92 @@
   <meta charset="UTF-8" />
   <title>Movie Insight - Mis Favoritos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Tailwind CDN (igual que en index.html) -->
   <script src="https://cdn.tailwindcss.com"></script>
-
   <link rel="icon" href="https://www.svgrepo.com/show/343107/movie.svg" />
 </head>
 <body class="min-h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-
-  <!-- NAVBAR -->
   <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-10">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
       <a href="/" class="flex items-center gap-2">
-        <span class="text-2xl">🎬</span>
+        <span class="text-2xl font-black">MI</span>
         <span class="font-semibold text-lg text-sky-400">Movie Insight</span>
       </a>
       <nav class="flex items-center gap-4 text-sm">
         <a href="/" class="hover:text-sky-400 transition">Buscar</a>
         <a href="/favorites.html" class="text-sky-400 font-semibold">Mis favoritos</a>
         <button id="open-auth" class="text-xs px-3 py-1 rounded-full border border-slate-700 hover:border-sky-500 hover:text-sky-300 hidden">
-          Iniciar sesión
+          Iniciar sesion
         </button>
         <button id="logout-btn" class="text-xs px-3 py-1 rounded-full border border-red-500 text-red-300 hover:bg-red-500/10 hidden">
-          Cerrar sesión
+          Cerrar sesion
         </button>
       </nav>
     </div>
   </header>
 
-  <!-- CONTENIDO -->
   <main class="max-w-5xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-4 text-sky-300">⭐ Mis películas favoritas</h1>
+    <h1 class="text-3xl font-bold mb-2 text-sky-300">Mis peliculas favoritas</h1>
     <p class="text-slate-400 mb-6 text-sm">
-      Aquí verás las películas que has ido marcando como favoritas desde la página de búsqueda.
+      Aqui veras las peliculas que has ido marcando como favoritas desde la pagina de busqueda.
     </p>
 
-    <!-- Contenedor donde se pintan las tarjetas -->
     <div id="fav-list" class="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-      <!-- Se rellena por JS -->
+      <!-- Rellenado por JS -->
     </div>
   </main>
 
-  <!-- Modal de login/registro -->
   <div id="auth-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-20">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h2 id="modal-title" class="text-xl font-semibold text-sky-300">Iniciar sesión</h2>
+        <h2 id="modal-title" class="text-xl font-semibold text-sky-300">Iniciar sesion</h2>
         <button id="close-auth" class="text-slate-400 hover:text-slate-200 text-lg">&times;</button>
       </div>
 
-      <!-- LOGIN -->
       <form id="login-form" class="space-y-3">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Usuario o email</label>
-          <input id="login-username" type="text" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+          <input id="login-username" type="text" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500" />
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Contraseña</label>
-          <input id="login-password" type="password" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+          <label class="block text-xs text-slate-400 mb-1">Contrasena</label>
+          <input id="login-password" type="password" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500" />
         </div>
         <button type="button" id="do-login"
           class="w-full mt-2 bg-sky-600 hover:bg-sky-500 text-sm font-medium py-2 rounded-lg">
           Entrar
         </button>
         <p class="text-xs text-slate-400 pt-2">
-          ¿No tienes cuenta?
-          <a href="#" id="show-register" class="text-sky-400 hover:underline">Regístrate</a>
+          No tienes cuenta?
+          <a href="#" id="show-register" class="text-sky-400 hover:underline">Registrate</a>
         </p>
       </form>
 
-      <!-- REGISTER -->
       <form id="register-form" class="space-y-3 hidden">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Usuario</label>
-          <input id="reg-username" type="text" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+          <input id="reg-username" type="text" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500" />
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Email</label>
-          <input id="reg-email" type="email" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+          <input id="reg-email" type="email" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500" />
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Contraseña</label>
-          <input id="reg-password" type="password" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+          <label class="block text-xs text-slate-400 mb-1">Contrasena</label>
+          <input id="reg-password" type="password" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500" />
         </div>
         <button type="button" id="do-register"
           class="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-sm font-medium py-2 rounded-lg">
           Crear cuenta
         </button>
         <p class="text-xs text-slate-400 pt-2">
-          ¿Ya tienes cuenta?
-          <a href="#" id="show-login" class="text-sky-400 hover:underline">Inicia sesión</a>
+          Ya tienes cuenta?
+          <a href="#" id="show-login" class="text-sky-400 hover:underline">Inicia sesion</a>
         </p>
       </form>
     </div>
   </div>
 
+  <script src="/js/ui.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/favorites.js"></script>
 </body>

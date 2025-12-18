@@ -1,78 +1,102 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8"/>
   <title>Movie Insight</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-  <nav class="bg-white shadow">
-  <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-    
-    <h1 class="text-xl font-semibold">Movie Insight</h1>
-
-    <div class="flex gap-3 items-center">
-      <a id="favorites-link" href="/favorites.html" class="hidden">
-         ⭐ Mis Favoritos
+<body class="min-h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2">
+        <span class="text-2xl font-black">MI</span>
+        <span class="font-semibold text-lg text-sky-400">Movie Insight</span>
       </a>
-
-      <button id="open-auth" class="bg-indigo-600 text-white px-3 py-1 rounded">
-        Iniciar sesión / Registrarse
-      </button>
-
-      <button id="logout-btn" class="hidden bg-red-500 text-white px-3 py-1 rounded">
-        Cerrar sesión
-      </button>
+      <nav class="flex items-center gap-4 text-sm">
+        <a href="/" class="text-sky-400 font-semibold">Buscar</a>
+        <a id="favorites-link" href="/favorites.html" class="hover:text-sky-400 transition hidden">Mis favoritos</a>
+        <button id="open-auth" class="text-xs px-3 py-1 rounded-full border border-slate-700 hover:border-sky-500 hover:text-sky-300">
+          Iniciar sesion
+        </button>
+        <button id="logout-btn" class="text-xs px-3 py-1 rounded-full border border-red-500 text-red-300 hover:bg-red-500/10 hidden">
+          Cerrar sesion
+        </button>
+      </nav>
     </div>
+  </header>
 
-  </div>
-</nav>
-
-  <main class="max-w-4xl mx-auto p-6">
-    <section class="mb-6">
-      <div class="flex gap-2">
-        <input id="q" class="flex-1 border rounded px-3 py-2" placeholder="Buscar título de película..."/>
-        <button id="search-btn" class="bg-indigo-600 text-white px-4 rounded">Buscar</button>
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <section class="mb-8 space-y-3">
+      <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Catalogo</p>
+      <h1 class="text-4xl font-bold text-sky-200">Busca estrenos y clasicos</h1>
+      <p class="text-slate-300 max-w-2xl">Consulta fichas oficiales, reparto y valoraciones; guarda tus titulos en una coleccion personal accesible desde cualquier dispositivo.</p>
+      <div class="grid md:grid-cols-[2fr,1fr] gap-3 mt-2">
+        <input id="q" class="flex-1 border border-slate-800 bg-slate-900 rounded-lg px-3 py-3 text-base text-slate-100 shadow-inner" placeholder="Introduce el titulo de la pelicula"/>
+        <div class="flex gap-2 flex-wrap">
+          <input id="year" class="w-20 border border-slate-800 bg-slate-900 rounded-lg px-3 py-2 text-sm text-slate-100 shadow-inner" placeholder="Ano"/>
+          <input id="genre" class="flex-1 min-w-[140px] border border-slate-800 bg-slate-900 rounded-lg px-3 py-2 text-sm text-slate-100 shadow-inner" placeholder="Genero (opcional)"/>
+          <label class="flex items-center gap-2 text-slate-300 text-sm border border-slate-800 rounded-lg px-3 py-2 bg-slate-900">
+            <input type="checkbox" id="list-mode" class="accent-sky-500">
+            Modo lista
+          </label>
+          <button id="search-btn" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-500 transition shadow-lg shadow-sky-900/40">Buscar</button>
+        </div>
       </div>
     </section>
 
-    <section id="results"></section>
+    <section class="mb-6">
+      <div id="loader" class="hidden flex items-center gap-2 text-slate-300">
+        <span class="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></span>
+        <span>Cargando...</span>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold text-sky-200">Tendencias de la semana</h2>
+        <span class="text-xs px-2 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300">Top picks</span>
+      </div>
+      <div id="trending-grid" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3"></div>
+    </section>
+
+    <section id="results" class="space-y-3"></section>
   </main>
 
   <!-- Modal -->
-  <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
-    <div class="bg-white rounded-lg w-full max-w-md p-6">
+  <div id="auth-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-20">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h2 id="modal-title" class="text-lg font-semibold">Iniciar sesión</h2>
-        <button id="close-auth" class="text-gray-500">&times;</button>
+        <h2 id="modal-title" class="text-xl font-semibold text-sky-300">Autenticacion</h2>
+        <button id="close-auth" class="text-slate-400 hover:text-slate-200 text-2xl leading-none">&times;</button>
       </div>
 
-      <div id="forms">
+      <div id="forms" class="space-y-6">
         <!-- Login form -->
-        <div id="login-form">
-          <input id="login-username" class="w-full border rounded p-2 mb-2" placeholder="Usuario"/>
-          <input id="login-password" type="password" class="w-full border rounded p-2 mb-4" placeholder="Contraseña"/>
-          <div class="flex justify-between items-center">
-            <button id="do-login" class="bg-indigo-600 text-white px-4 py-2 rounded">Entrar</button>
-            <a href="#" id="show-register" class="text-sm text-indigo-600">Crear cuenta</a>
+        <div id="login-form" class="space-y-3">
+          <input id="login-username" class="w-full border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 rounded px-3 py-2" placeholder="Usuario o email"/>
+          <input id="login-password" type="password" class="w-full border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 rounded px-3 py-2" placeholder="Contrasena"/>
+          <div class="flex justify-between items-center text-sm">
+            <button id="do-login" class="bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-500">Entrar</button>
+            <a href="#" id="show-register" class="text-sky-300 hover:underline">Crear cuenta</a>
           </div>
         </div>
 
         <!-- Register form -->
-        <div id="register-form" class="hidden">
-          <input id="reg-username" class="w-full border rounded p-2 mb-2" placeholder="Usuario"/>
-          <input id="reg-email" class="w-full border rounded p-2 mb-2" placeholder="Email"/>
-          <input id="reg-password" type="password" class="w-full border rounded p-2 mb-4" placeholder="Contraseña"/>
-          <div class="flex justify-between items-center">
-            <button id="do-register" class="bg-green-600 text-white px-4 py-2 rounded">Registrar</button>
-            <a href="#" id="show-login" class="text-sm text-indigo-600">Tengo cuenta</a>
+        <div id="register-form" class="hidden space-y-3">
+          <input id="reg-username" class="w-full border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 rounded px-3 py-2" placeholder="Usuario"/>
+          <input id="reg-email" class="w-full border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 rounded px-3 py-2" placeholder="Email"/>
+          <input id="reg-password" type="password" class="w-full border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 rounded px-3 py-2" placeholder="Contrasena"/>
+          <div class="flex justify-between items-center text-sm">
+            <button id="do-register" class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-500">Registrar</button>
+            <a href="#" id="show-login" class="text-sky-300 hover:underline">Tengo cuenta</a>
           </div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="/js/ui.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/app.js"></script>
 </body>

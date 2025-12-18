@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Movie Insight API
-  version: 1.0.0
+  version: 1.1.0
 servers:
   - url: http://localhost:8080
 components:
@@ -13,51 +13,104 @@ components:
 paths:
   /api/movies:
     get:
-      summary: Busca película por título
+      summary: Search a movie by title/imdb id or perform list search (proxied to Python service)
       parameters:
         - in: query
           name: title
-          required: true
-          schema:
-            type: string
+          schema: { type: string }
+          description: Exact title to fetch (OMDb "t" query)
+        - in: query
+          name: imdbid
+          schema: { type: string }
+          description: imdb id to fetch directly
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Free text search (OMDb "s" query) returning a list
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+          description: Page when using search mode (s)
+        - in: query
+          name: year
+          schema: { type: string }
+          description: Optional year filter
+        - in: query
+          name: genre
+          schema: { type: string }
+          description: Optional genre filter (applied after fetching details)
       responses:
         '200':
-          description: Película encontrada
+          description: Movie data or search list
+        '404':
+          description: Movie not found
+  /api/trending:
+    get:
+      summary: List cached trending picks (via OMDb search)
+      responses:
+        '200':
+          description: List of trending movies
   /api/auth/register:
     post:
-      summary: Registrar usuario
+      summary: Register a new user
       requestBody:
         required: true
       responses:
-        '200':
-          description: Usuario creado
+        '201':
+          description: User created
+        '409':
+          description: User already exists
   /api/auth/login:
     post:
-      summary: Login usuario
+      summary: Login with username or email
       requestBody:
         required: true
       responses:
         '200':
-          description: Devuelve token JWT
+          description: Returns JWT token and user data
+        '401':
+          description: Invalid credentials
   /api/users/{id}/favorites:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
     get:
-      summary: Obtener favoritos (autenticación requerida)
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+      summary: Get favorites for the user
+      security: [ { bearerAuth: [] } ]
       responses:
-        '200':
-          description: Lista de favoritos
+        '200': { description: List of imdb ids }
+        '403': { description: Forbidden }
     post:
-      summary: Añadir favorito (autenticación requerida)
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+      summary: Add a new favorite movie
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+      responses:
+        '200': { description: Updated favorites list }
+        '409': { description: Already in favorites }
+  /api/users/{id}/favorites/{imdbid}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+      - in: path
+        name: imdbid
+        required: true
+        schema: { type: string }
+    delete:
+      summary: Remove a favorite movie
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '200': { description: Updated favorites list }
+        '403': { description: Forbidden }
+    put:
+      summary: Update rating/comment of a favorite movie
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+      responses:
+        '200': { description: Updated favorite }
+        '404': { description: Favorite not found }
