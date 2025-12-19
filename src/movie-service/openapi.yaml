@@ -1,0 +1,48 @@
+openapi: 3.0.0
+info:
+  title: Movie Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:5001
+paths:
+  /movies:
+    get:
+      summary: Buscar pelicula (detalle) o lista
+      parameters:
+        - in: query
+          name: title
+          schema: { type: string }
+          description: Titulo exacto (OMDb t)
+        - in: query
+          name: imdbid
+          schema: { type: string }
+          description: ID imdb
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Busqueda libre (OMDb s)
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+          description: Pagina para busqueda libre
+        - in: query
+          name: genre
+          schema: { type: string }
+          description: Filtro de genero (post-procesado)
+        - in: query
+          name: year
+          schema: { type: string }
+          description: Ano opcional
+      responses:
+        '200': { description: Resultado }
+        '404': { description: No encontrado }
+  /trending:
+    get:
+      summary: Devuelve listado de trending (keywords predefinidas)
+      responses:
+        '200': { description: Lista trending }
+  /health:
+    get:
+      summary: Healthcheck
+      responses:
+        '200': { description: ok }

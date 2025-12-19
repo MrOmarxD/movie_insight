@@ -1,3 +1,6 @@
+Repositorio publico (GitHub):
+https://github.com/MrOmarxD/movie_insight
+
 Movie Insight - Proyecto Desarrollo avanzado de aplicaciones para la Web de Datos
 
 Resumen:
