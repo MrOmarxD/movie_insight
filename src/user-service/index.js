@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');
 const User = require('./models/user');
 
 const app = express();
@@ -11,10 +12,46 @@ app.use(express.json());
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://mongo:27017/movieinsight";
 const JWT_SECRET = process.env.JWT_SECRET || "changemeinprod";
+const POSTGRES_URI = process.env.POSTGRES_URI || "postgresql://postgres:postgres@postgres:5432/movieinsight";
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log("Mongo connected"))
   .catch(err => console.error("Mongo connection error:", err));
+
+let pgPool = null;
+async function initPostgres() {
+  try {
+    pgPool = new Pool({ connectionString: POSTGRES_URI });
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS favorite_logs (
+        id SERIAL PRIMARY KEY,
+        action TEXT,
+        user_id TEXT,
+        imdbid TEXT,
+        rating INT,
+        comment TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    console.log("Postgres connected");
+  } catch (err) {
+    console.error("Postgres connection error:", err.message);
+    pgPool = null;
+  }
+}
+initPostgres();
+
+async function logFavorite(action, userId, imdbid, rating, comment) {
+  if (!pgPool) return;
+  try {
+    await pgPool.query(
+      "INSERT INTO favorite_logs(action, user_id, imdbid, rating, comment) VALUES ($1,$2,$3,$4,$5)",
+      [action, userId, imdbid, rating ?? null, comment ?? null]
+    );
+  } catch (err) {
+    console.error("Log favorite error:", err.message);
+  }
+}
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
@@ -144,6 +181,7 @@ app.post('/users/:id/favorites', requireAuth, async (req, res) => {
     });
     user.markModified('favorites');
     await user.save();
+    logFavorite("add", user._id.toString(), imdbid, rating, comment);
 
     res.json({ favorites: user.favorites });
   } catch (err) {
@@ -173,6 +211,7 @@ app.put('/users/:id/favorites/:imdbid', requireAuth, async (req, res) => {
 
     user.markModified('favorites');
     await user.save();
+    logFavorite("update", user._id.toString(), req.params.imdbid, fav.rating, fav.comment);
     res.json({ favorites: user.favorites });
   } catch (err) {
     console.error("update favorite error:", err);
@@ -211,6 +250,7 @@ app.delete('/users/:id/favorites/:imdbid', requireAuth, async (req, res) => {
       .filter(f => f.imdbid !== req.params.imdbid);
     user.markModified('favorites');
     await user.save();
+    logFavorite("delete", user._id.toString(), req.params.imdbid, null, null);
 
     res.json({ favorites: user.favorites });
   } catch (err) {

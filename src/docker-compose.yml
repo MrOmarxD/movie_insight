@@ -9,6 +9,20 @@ services:
     networks:
       - appnet
 
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=movieinsight
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - appnet
+
   movie-service:
     build: ./movie-service
     container_name: movie-service
@@ -28,8 +42,10 @@ services:
     environment:
       - MONGO_URI=mongodb://mongo:27017/movieinsight
       - JWT_SECRET=${JWT_SECRET}
+      - POSTGRES_URI=${POSTGRES_URI:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/movieinsight}
     depends_on:
       - mongo
+      - postgres
     ports:
       - "5002:5002"
     networks:
@@ -52,6 +68,7 @@ services:
 
 volumes:
   mongo_data:
+  pg_data:
 
 networks:
   appnet:
